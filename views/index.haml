@@ -12,11 +12,13 @@
         -@data[:authors].each do |author|
           %Author= h author
         %EAN= h @data[:isbn13]
+        %Edition= h @data[:edition]
         %Feature= h "ISBN13: #{@data[:isbn13]}"
         %ISBN= h @data[:isbn10]
         %Binding= h @data[:binding]
         %ListPrice
           %FormattedPrice= h "$#{@data[:price]}"
+        %NumberOfPages= @data[:pages]
         %ProductGroup Book
         %PublicationDate= h @data[:publication_date]
         %Publisher= h @data[:publisher]

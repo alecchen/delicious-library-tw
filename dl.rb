@@ -13,6 +13,7 @@ get '/onca/xml' do
   isbn13[-1] = check_digit
 
   # search result
+  # if keyword =~ /^\d+$/ => isbn search, else => title search
   base_url = 'http://lib.ncl.edu.tw'
   url = base_url + '/cgi-bin/isbnget?OPT=BOOK.B&TYPE=S&PGNO=1&SEL.CL=&FNM=S&TOPICS1=BN&SEARCHSTR1=' + 
     isbn13 + '&BOL1=AND&TOPICS2=TI&SEARCHSTR2=&BOL2=AND&TOPICS3=TI&SEARCHSTR3=&PAGELINE=10'
