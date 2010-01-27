@@ -2,22 +2,22 @@
 %ItemLookupResponse{:xmlns=>"http://webservices.amazon.com/AWSECommerceService/2009-07-01"}
   %Items
     %Item
-      %ASIN= @data[:isbn10]
-      %DetailPageURL= @data[:url]
+      %ASIN= h @data[:isbn10]
+      %DetailPageURL= h @data[:url]
       %ImageSets
         %ImageSet{:Category=>"primary"}
           %LargeImage
             %URL= h @data[:image_url]
       %ItemAttributes
         -@data[:authors].each do |author|
-          %Author= author
-        %EAN= @data[:isbn13]
-        %Feature= "ISBN13: #{@data[:isbn13]}"
-        %ISBN= @data[:isbn10]
-        %Binding= @data[:binding]
+          %Author= h author
+        %EAN= h @data[:isbn13]
+        %Feature= h "ISBN13: #{@data[:isbn13]}"
+        %ISBN= h @data[:isbn10]
+        %Binding= h @data[:binding]
         %ListPrice
-          %FormattedPrice= "$#{@data[:price]}"
+          %FormattedPrice= h "$#{@data[:price]}"
         %ProductGroup Book
-        %PublicationDate= @data[:publication_date]
-        %Publisher= @data[:publisher]
-        %Title= "#{@data[:title]} #{@data[:volume]}"
+        %PublicationDate= h @data[:publication_date]
+        %Publisher= h @data[:publisher]
+        %Title= h "#{@data[:title]} #{@data[:volume]}"

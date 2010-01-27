@@ -18,6 +18,8 @@ get '/onca/xml' do
     isbn13 + '&BOL1=AND&TOPICS2=TI&SEARCHSTR2=&BOL2=AND&TOPICS3=TI&SEARCHSTR3=&PAGELINE=10'
 
   # book page
+  # TODO: multiple search results
+  # TODO: TITLE search
   doc = Nokogiri::HTML(open(url, 'User-Agent' => 'Mac Mozilla'))
   link = doc.xpath('//a').first
   exit unless link
@@ -28,6 +30,7 @@ get '/onca/xml' do
   title = doc.xpath('//a[@name="TOP"]//b').text.gsub(/\s+/, '')
   title = title.sub(/【/, '')
   title = title.sub(/】/, '')
+  puts "title = #{title}"
 
   authors = author.split(/\s*;\s*/)
 
@@ -36,7 +39,8 @@ get '/onca/xml' do
     info = item.at_xpath('.//td[2]').content.split(/\(|\)|：/)
     isbn = info[0]
     binding = info[-1]
-    mytitle = "#{title} #{info[1]}" if info.count == 3
+    mytitle = title
+    mytitle += " #{info[1]}" if info.count == 3
     next unless isbn =~ /\d/
 
     pages, size, price = [3,4,5].collect { |i| item.at_xpath(".//td[#{i}]").content.match(/\d+/).to_a[0] }
@@ -48,6 +52,7 @@ get '/onca/xml' do
     data[isbn] = {
       :title => mytitle,
       :url => "http://findbook.tw/book/#{isbn13}/basic",
+      :binding => binding,
       :isbn13 => isbn13,
       :isbn10 => isbn10,
       :authors => authors,
@@ -68,12 +73,14 @@ get '/onca/xml' do
   doc = Nokogiri::HTML(open(url, 'User-Agent' => 'Mac Mozilla'))
   link = doc.xpath('//div[@class="conten"]//a').first
 
-  url = link[:href]
-  puts url
-  doc = Nokogiri::HTML(open(url, 'User-Agent' => 'Mac Mozilla'))
-  img = doc.xpath('//div/img').first
-  @data[:image_url] = img[:src]
-  puts img[:src]
+  if link
+    url = link[:href]
+    puts url
+    doc = Nokogiri::HTML(open(url, 'User-Agent' => 'Mac Mozilla'))
+    img = doc.xpath('//div/img').first
+    @data[:image_url] = img[:src]
+    puts img[:src]
+  end
 
   # render page
   content_type 'text/xml', :charset => 'utf-8'
@@ -83,4 +90,23 @@ end
 helpers do
   include Rack::Utils
   alias_method :h, :escape_html
+
+  def isbn10_13(keyword)
+    isbn10 = ''
+    isbn13 = ''
+
+    if keyword.length == 10
+      isbn10 = keyword
+      isbn13 = '978' + isbn10
+      check_digit = ISBN_Tools.compute_isbn13_check_digit(isbn13)
+      isbn13[-1] = check_digit
+    else
+      isbn13 = keyword
+      isbn10 = isbn13[3..12]
+      check_digit = ISBN_Tools.compute_isbn10_check_digit(isbn10)
+      isbn10[-1] = check_digit
+    end
+
+    return isbn10, isbn13
+  end
 end
