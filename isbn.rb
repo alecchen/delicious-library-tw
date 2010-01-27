@@ -3,7 +3,7 @@ require 'open-uri'
 require 'nokogiri'
 require 'pp'
 
-keyword = '9789572548370'
+keyword = '9789861036038'
 
 # search result
 base_url = 'http://lib.ncl.edu.tw'
@@ -21,13 +21,18 @@ puts url
 
 doc = Nokogiri::HTML(open(url, 'User-Agent' => 'Mac Mozilla'), nil, 'big5')
 author, publisher, edition = doc.xpath('//table[@width="100%"][1]//tr//td[2]').collect { |data| data.content }
-title = doc.xpath('//a[@name="TOP"]//b').text.gsub(/[【】\s]+/, '')
+title = doc.xpath('//a[@name="TOP"]//b').text.gsub(/\s+/, '')
+title = title.sub(/【/, '')
+title = title.sub(/】/, '')
 
 authors = author.split(/\s*;\s*/)
 
 data = {}
 doc.xpath('//table[@width="100%"][2]//tr').each do |item| 
-    isbn, volume, binding = item.at_xpath('.//td[2]').content.split(/\(|\)|：/)
+    info = item.at_xpath('.//td[2]').content.split(/\(|\)|：/)
+    isbn = info[0]
+    binding = info[-1]
+    title = "#{title} #{info[1]}" if info.count == 3
     next unless isbn =~ /\d/
 
     pages, size, price = [3,4,5].collect { |i| item.at_xpath(".//td[#{i}]").content.match(/\d+/).to_a[0] }
@@ -35,7 +40,6 @@ doc.xpath('//table[@width="100%"][2]//tr').each do |item|
     publication_date = "%d/#{pdate[1]}" % (pdate[0].to_i + 1911)
 
     isbn.gsub!(/-/, '')
-    volume = "%02d" % volume.match(/\d+/).to_a[0]
 
     data[isbn] = {
         :title => title,
@@ -47,11 +51,10 @@ doc.xpath('//table[@width="100%"][2]//tr').each do |item|
         :size => size,
         :price => price,
         :publication_date => publication_date,
-        :volume => volume,
     }
 end
 
-puts data[keyword]
+puts data
 
 # cover
 # 1 http://findbook.tw

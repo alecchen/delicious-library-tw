@@ -25,13 +25,18 @@ get '/onca/xml' do
   url = base_url + link[:href]
   doc = Nokogiri::HTML(open(url, 'User-Agent' => 'Mac Mozilla'), nil, 'big5')
   author, publisher, edition = doc.xpath('//table[@width="100%"][1]//tr//td[2]').collect { |data| data.content }
-  title = doc.xpath('//a[@name="TOP"]//b').text.gsub(/[【】\s]+/, '')
+  title = doc.xpath('//a[@name="TOP"]//b').text.gsub(/\s+/, '')
+  title = title.sub(/【/, '')
+  title = title.sub(/】/, '')
 
   authors = author.split(/\s*;\s*/)
 
   data = {}
   doc.xpath('//table[@width="100%"][2]//tr').each do |item| 
-    isbn, volume, binding = item.at_xpath('.//td[2]').content.split(/\(|\)|：/)
+    info = item.at_xpath('.//td[2]').content.split(/\(|\)|：/)
+    isbn = info[0]
+    binding = info[-1]
+    mytitle = "#{title} #{info[1]}" if info.count == 3
     next unless isbn =~ /\d/
 
     pages, size, price = [3,4,5].collect { |i| item.at_xpath(".//td[#{i}]").content.match(/\d+/).to_a[0] }
@@ -41,7 +46,7 @@ get '/onca/xml' do
     isbn.gsub!(/-/, '')
 
     data[isbn] = {
-      :title => title,
+      :title => mytitle,
       :url => "http://findbook.tw/book/#{isbn13}/basic",
       :isbn13 => isbn13,
       :isbn10 => isbn10,
@@ -53,17 +58,29 @@ get '/onca/xml' do
       :size => size,
       :price => price,
       :publication_date => publication_date,
-      :volume => volume,
     }
   end
 
   @data = data[isbn13]
 
-  # get cover from findbook
-  image_url = "http://static.findbook.tw/image/book/#{isbn13}/large"
-  `rm public/images/large.jpg; wget #{image_url}; mv large public/images/large.jpg`
+  url = "http://search.books.com.tw/exep/prod_search.php?cat=all&key=#{isbn13}"
+
+  doc = Nokogiri::HTML(open(url, 'User-Agent' => 'Mac Mozilla'))
+  link = doc.xpath('//div[@class="conten"]//a').first
+
+  url = link[:href]
+  puts url
+  doc = Nokogiri::HTML(open(url, 'User-Agent' => 'Mac Mozilla'))
+  img = doc.xpath('//div/img').first
+  @data[:image_url] = img[:src]
+  puts img[:src]
 
   # render page
   content_type 'text/xml', :charset => 'utf-8'
   haml :index
+end
+
+helpers do
+  include Rack::Utils
+  alias_method :h, :escape_html
 end
