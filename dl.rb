@@ -6,11 +6,8 @@ require 'open-uri'
 require 'isbn/tools'
 
 get '/onca/xml' do
-  isbn10 = params[:ItemId] || params[:Keywords]
-
-  isbn13 = "978#{isbn10}"
-  check_digit = ISBN_Tools.compute_isbn13_check_digit(isbn13)
-  isbn13[-1] = check_digit
+  keyword = params[:ItemId] || params[:Keywords]
+  isbn10, isbn13 = isbn10_13(keyword)
 
   # search result
   # if keyword =~ /^\d+$/ => isbn search, else => title search
@@ -26,8 +23,9 @@ get '/onca/xml' do
   exit unless link
 
   url = base_url + link[:href]
-  doc = Nokogiri::HTML(open(url, 'User-Agent' => 'Mac Mozilla'), nil, 'big5')
-  author, publisher, edition = doc.xpath('//table[@width="100%"][1]//tr//td[2]').collect { |data| data.content }
+  doc = Nokogiri::HTML(open(url, 'User-Agent' => 'Mac Mozilla'), nil, 'Big5-HKSCS')
+  author, publisher, edition = 
+    doc.xpath('//table[@width="100%"][1]//tr//td[2]').collect { |data| data.content }
   title = doc.xpath('//a[@name="TOP"]//b').text.gsub(/\s+/, '')
   title = title.sub(/【/, '')
   title = title.sub(/】/, '')
