@@ -4,6 +4,7 @@ require 'haml'
 require 'nokogiri'
 require 'open-uri'
 require 'isbn/tools'
+require 'lib/numconv'
 
 get '/onca/xml' do
   keyword = params[:ItemId] || params[:Keywords]
@@ -29,7 +30,6 @@ get '/onca/xml' do
   title = doc.xpath('//a[@name="TOP"]//b').text.gsub(/\s+/, '')
   title = title.sub(/【/, '')
   title = title.sub(/】/, '')
-  puts "title = #{title}"
 
   authors = author.split(/\s*;\s*/)
 
@@ -39,7 +39,20 @@ get '/onca/xml' do
     isbn = info[0]
     binding = info[-1]
     mytitle = title
-    mytitle += " #{info[1]}" if info.count == 3
+    volume = info[1]
+
+    if info.count == 3
+        if volume !~ /\d+/
+            puts volume
+            myconv = NumCnConv.new
+            volume = volume.scan(/[一二三四五六七八九十]+/).first
+            volume = myconv.cn2num(volume) 
+            volume = "第#{volume}集"
+        end
+        mytitle += volume
+    end
+
+    puts "mytitle = #{mytitle}"
     next unless isbn =~ /\d/
 
     pages, size, price = [3,4,5].collect { |i| item.at_xpath(".//td[#{i}]").content.match(/\d+/).to_a[0] }
@@ -70,15 +83,13 @@ get '/onca/xml' do
   url = "http://search.books.com.tw/exep/prod_search.php?cat=all&key=#{isbn13}"
 
   doc = Nokogiri::HTML(open(url, 'User-Agent' => 'Mac Mozilla'))
-  link = doc.xpath('//div[@class="conten"]//a').first
+  image = doc.xpath('//div[@class="book"]//img').first
 
-  if link
-    url = link[:href]
-    puts url
-    doc = Nokogiri::HTML(open(url, 'User-Agent' => 'Mac Mozilla'))
-    img = doc.xpath('//div/img').first
-    @data[:image_url] = img[:src]
-    puts img[:src]
+  if image
+    image_url = image[:src].split('&').first
+    image_url += '&width=200&quality=100'
+    @data[:image_url] = image_url
+    puts image_url
   end
 
   # render page
