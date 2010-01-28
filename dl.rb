@@ -21,7 +21,7 @@ get '/onca/xml' do
   # TODO: TITLE search
   doc = Nokogiri::HTML(open(url, 'User-Agent' => 'Mac Mozilla'))
   link = doc.xpath('//a').first
-  exit unless link
+  return unless link
 
   url = base_url + link[:href]
   doc = Nokogiri::HTML(open(url, 'User-Agent' => 'Mac Mozilla'), nil, 'Big5-HKSCS')
@@ -42,8 +42,7 @@ get '/onca/xml' do
     volume = info[1]
 
     if info.count == 3
-        if volume !~ /\d+/
-            puts volume
+        if volume.length > 6 && volume !~ /\d+/
             myconv = NumCnConv.new
             volume = volume.scan(/[一二三四五六七八九十]+/).first
             volume = myconv.cn2num(volume) 
@@ -52,7 +51,6 @@ get '/onca/xml' do
         mytitle += volume
     end
 
-    puts "mytitle = #{mytitle}"
     next unless isbn =~ /\d/
 
     pages, size, price = [3,4,5].collect { |i| item.at_xpath(".//td[#{i}]").content.match(/\d+/).to_a[0] }
@@ -89,7 +87,6 @@ get '/onca/xml' do
     image_url = image[:src].split('&').first
     image_url += '&width=200&quality=100'
     @data[:image_url] = image_url
-    puts image_url
   end
 
   # render page
