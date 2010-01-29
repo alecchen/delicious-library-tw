@@ -13,11 +13,21 @@ Usage
 
 1. add the following line into /etc/hosts
 
-    >0.0.0.0 webservices.amazon.fr
+    `0.0.0.0 webservices.amazon.fr`
 
 2. run dl.rb as root
 
     `sudo ruby dl.rb -p 80`
+
+3. use your library as usual
+
+4. have fun!
+
+TODO
+----
+
+- handle old books
+- handle no isbn books
 
 See Also
 --------
