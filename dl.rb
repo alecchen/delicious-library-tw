@@ -7,30 +7,21 @@ require 'isbn/tools'
 require 'lib/numconv'
 require 'uri'
 
-require 'pp'
-
 $itemid = {}
 
 get '/onca/xml' do
   keyword = params[:ItemId] || params[:Keywords]
-  puts "### keyword = #{keyword}"
   @data = []
-
-  pp $itemid
 
   #itemid search
   if params[:ItemId] && keyword =~ /^(?=0)\w{10}/
-    puts "get_data_from_itemid"
     itemid = $itemid[keyword][3..13]
-    puts "itemid = #{itemid}"
     @data = get_data_from_keyword(itemid)
   # isbn search
   elsif params[:ItemId] && keyword =~ /^\d{10,13}/
-    puts "get_data_from_isbn"
     @data = get_data_from_isbn(keyword)
   # keyword search
   else
-    puts "get_data_from_keyword"
     @data = get_data_from_keyword(keyword)
   end
 
