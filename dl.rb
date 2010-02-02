@@ -7,15 +7,30 @@ require 'isbn/tools'
 require 'lib/numconv'
 require 'uri'
 
+require 'pp'
+
+$itemid = {}
+
 get '/onca/xml' do
   keyword = params[:ItemId] || params[:Keywords]
+  puts "### keyword = #{keyword}"
   @data = []
 
+  pp $itemid
+
+  #itemid search
+  if params[:ItemId] && keyword =~ /^(?=0)\w{10}/
+    puts "get_data_from_itemid"
+    itemid = $itemid[keyword][3..13]
+    puts "itemid = #{itemid}"
+    @data = get_data_from_keyword(itemid)
   # isbn search
-  if keyword =~ /^\d{10,13}/
+  elsif params[:ItemId] && keyword =~ /^\d{10,13}/
+    puts "get_data_from_isbn"
     @data = get_data_from_isbn(keyword)
   # keyword search
   else
+    puts "get_data_from_keyword"
     @data = get_data_from_keyword(keyword)
   end
 
@@ -60,7 +75,13 @@ helpers do
       title.gsub!(/\)/, '')
 
       book_url = item.at_xpath('.//h3//a')[:href]
-      isbn = book_url.scan(/\d+/)[0]
+      isbn = book_url.scan(/\d{10}/)[0]
+      isbn = "978#{isbn}"
+
+      if isbn.length == 13
+        isbn10, isbn13 = isbn10_13(isbn)
+        $itemid[isbn10] = isbn
+      end
 
       info = item.xpath('.//h4//a')
       authors = [info[0][:title]]
@@ -78,12 +99,17 @@ helpers do
         :url => book_url,
         :isbn13 => isbn,
         :isbn10 => isbn,
+        :isbn => isbn,
         :authors => authors,
         :publisher => publisher,
-        :isbn => isbn,
         :image_url => image_url,
         :publication_date => publication_date,
-        #:price => price,
+
+        #:binding => 'paperback',
+        #:edition => '1st',
+        #:pages => '100',
+        #:size => '17cm',
+        #:price => '100',
       }
 
       data
