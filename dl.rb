@@ -14,11 +14,11 @@ get '/onca/xml' do
   @data = []
 
   #itemid search
-  if params[:ItemId] && keyword =~ /^(?=0)\w{10}/
+  if $itemid[keyword]
     itemid = $itemid[keyword][3..13]
     @data = get_data_from_keyword(itemid)
   # isbn search
-  elsif params[:ItemId] && keyword =~ /^\d{10,13}/
+  elsif ISBN_Tools.is_valid?(keyword)
     @data = get_data_from_isbn(keyword)
   # keyword search
   else
@@ -145,7 +145,7 @@ helpers do
           myconv = NumCnConv.new
           volume = volume.scan(/[一二三四五六七八九十]+/).first
           volume = myconv.cn2num(volume) 
-          volume = "第#{volume}集"
+          volume = " 第#{volume}集"
         end
         mytitle += volume
       end
